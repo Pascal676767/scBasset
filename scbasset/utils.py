@@ -17,6 +17,13 @@ from scbasset.basenji_utils import *
 # function for pre-processing #
 ###############################
 
+def reverse_complement(seq_dna):    #################################################################### new reverse complement function 
+    complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', 'N': 'N'} 
+    complement_seq= ''.join([complement[base] for base in seq_dna])
+    reverse_complement_seq =  complement_seq[::-1]
+    return reverse_complement_seq
+    
+
 def make_bed_seqs_from_df(input_bed, fasta_file, seq_len, stranded=False):
     """Return BED regions as sequences and regions as a list of coordinate
     tuples, extended to a specified length."""
@@ -30,7 +37,12 @@ def make_bed_seqs_from_df(input_bed, fasta_file, seq_len, stranded=False):
         chrm = input_bed.iloc[i,0]
         start = int(input_bed.iloc[i,1])
         end = int(input_bed.iloc[i,2])
-        strand = "+"
+
+        # determine strand
+        if stranded:
+            strand = input_bed.iloc[i,3]
+        else:
+            strand = "+"
 
         # determine sequence limits
         mid = (start + end) // 2
@@ -63,6 +75,13 @@ def make_bed_seqs_from_df(input_bed, fasta_file, seq_len, stranded=False):
                 file=sys.stderr,
             )
             seq_dna += "N" * (seq_len - len(seq_dna))
+
+        
+        if strand == '-':
+            print(f'Not reverse:\n\n {seq_dna}')
+            seq_dna = reverse_complement(seq_dna)
+            print(f'reverse:\n\n {seq_dna}')
+
         # append
         seqs_dna.append(seq_dna)
     fasta_open.close()
@@ -110,21 +129,37 @@ def dna_1hot_2vec(seq, seq_len=None):
                 seq_code[i] =  random.randint(0, 3)
     return seq_code
 
-def split_train_test_val(ids, seed=10, train_ratio=0.9):
-    np.random.seed(seed)
-    test_val_ids = np.random.choice(
-        ids,
-        int(len(ids) * (1 - train_ratio)),
-        replace=False,
-    )
+def split_train_test_val(ad, exclude_chr):                                           ############################################################ new split function
+    # All indices
+    ids = np.arange(ad.shape[1])
+
+    # Indices from the first excluded chromosome
+    test_ids = np.where(ad.var['chr'] == exclude_chr[0])[0]
+    # Indices from the second excluded chromosome
+    val_ids = np.where(ad.var['chr'] == exclude_chr[1])[0]
+    # Combined indices of test and validation sets
+    test_val_ids = np.concatenate((test_ids, val_ids))
+
+    # All indices that are not in either the first or second excluded chromosome
     train_ids = np.setdiff1d(ids, test_val_ids)
-    val_ids = np.random.choice(
-        test_val_ids,
-        int(len(test_val_ids) / 2),
-        replace=False,
-    )
-    test_ids = np.setdiff1d(test_val_ids, val_ids)
+    
     return train_ids, test_ids, val_ids
+
+# def split_train_test_val(ids, seed=10, train_ratio=0.9):                            ########################################################### old split function
+#     np.random.seed(seed)
+#     test_val_ids = np.random.choice(
+#         ids,
+#         int(len(ids) * (1 - train_ratio)),
+#         replace=False,
+#     )
+#     train_ids = np.setdiff1d(ids, test_val_ids)
+#     val_ids = np.random.choice(
+#         test_val_ids,
+#         int(len(test_val_ids) / 2),
+#         replace=False,
+#     )
+#     test_ids = np.setdiff1d(test_val_ids, val_ids)
+#     return train_ids, test_ids, val_ids
     
 
 def make_h5_sparse(tmp_ad, h5_name, input_fasta, seq_len=1344, batch_size=1000):
@@ -136,7 +171,7 @@ def make_h5_sparse(tmp_ad, h5_name, input_fasta, seq_len=1344, batch_size=1000):
     m = tmp_ad.X
     m = m.tocoo().transpose().tocsr()
     n_peaks = tmp_ad.shape[1]
-    bed_df = tmp_ad.var.loc[:,['chr','start','end']] # bed file
+    bed_df = tmp_ad.var.loc[:,['chr','start','end', 'strand']] # bed file            ############################################################ adding strand
     bed_df.index = np.arange(bed_df.shape[0])
     n_batch = int(np.floor(n_peaks/batch_size))
     batches = np.array_split(np.arange(n_peaks), n_batch) # split all peaks to process in batches
@@ -160,6 +195,7 @@ def make_h5_sparse(tmp_ad, h5_name, input_fasta, seq_len=1344, batch_size=1000):
             bed_df.iloc[idx,:],
             fasta_file=input_fasta,
             seq_len=seq_len,
+            stranded=True,                                                           ############################################################ addind stranded on True
         )
         dna_array_dense = [dna_1hot_2vec(x) for x in seqs_dna]
         dna_array_dense = np.array(dna_array_dense)
@@ -228,6 +264,7 @@ def make_model(
         current,
         units=n_cells,
         activation="sigmoid",
+        l2_scale = 0.5,                                                              ########################################################### addition l2 regularization with rate of 0.5
     )
     current = SwitchReverse()(
         [current, reverse_bool]
@@ -237,6 +274,7 @@ def make_model(
     if show_summary:
         model.summary()
     return model
+
 
 
 
