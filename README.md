@@ -16,7 +16,7 @@ To install scBasset, we suggest first create a conda environment by:
 ```
 and then run the following commands:
 ```
-    git clone https://github.com/calico/scBasset.git
+    git clone https://github.com/Pascal676767/scBasset.git
     pip install -e scBasset
 ```
 Installation should take only a few minutes. Verify that scBasset is correctly installed by running in python:
