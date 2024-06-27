@@ -19,7 +19,7 @@ def make_parser():
     parser.add_argument('--out_path', type=str, default='./processed',
                         help='Output path. Default to ./processed/')
     parser.add_argument('--chromosomes', type=str, nargs='+', default=['chr2', 'chr19'],
-                        help='Chromosomes to include in train/test/val splits. Default to chr2 and chr19.')
+                        help='Chromosomes to exclude from the training data set, that will be used for test and validation. Default to chr2 and chr19.')
 
     return parser
 
