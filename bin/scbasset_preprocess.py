@@ -20,6 +20,8 @@ def make_parser():
                         help='Output path. Default to ./processed/')
     parser.add_argument('--chromosomes', type=str, nargs='+', default=['chr2', 'chr19'],
                         help='Chromosomes to exclude from the training data set, that will be used for test and validation. Default to chr2 and chr19.')
+    parser.add_argument('--batch_size', type=int, default=1000,
+                        help='Size of the batch. Default to 1000')
 
     return parser
 
@@ -33,6 +35,8 @@ def main():
     input_fasta = args.input_fasta
     output_path = args.out_path
     chromosomes = args.chromosomes
+    batch_size = args.batch_size
+
     
     ad = anndata.read_h5ad(input_ad)
 
@@ -50,7 +54,7 @@ def main():
     print('Successful writing bed file.')
 
     # save train, test, val splits
-    train_ids, test_ids, val_ids = split_train_test_val(ad, chromosomes)
+    train_ids, test_ids, val_ids = split_train_test_val(ad, chromosomes, batch_size)
     with h5py.File('%s/splits.h5' % output_path, "w") as f:
         f.create_dataset("train_ids", data=train_ids)
         f.create_dataset("test_ids", data=test_ids)
@@ -71,13 +75,11 @@ def main():
     ad_train = ad[:, train_ids]
     ad_test = ad[:, test_ids]
     ad_val = ad[:, val_ids]
-    make_h5_sparse(ad, '%s/all_seqs.h5' % output_path, input_fasta)
-    make_h5_sparse(ad_train, '%s/train_seqs.h5' % output_path, input_fasta)
-    make_h5_sparse(ad_test, '%s/test_seqs.h5' % output_path, input_fasta)
-    make_h5_sparse(ad_val, '%s/val_seqs.h5' % output_path, input_fasta)
+    make_h5_sparse(ad, '%s/all_seqs.h5' % output_path, input_fasta, batch_size)
+    make_h5_sparse(ad_train, '%s/train_seqs.h5' % output_path, input_fasta, batch_size)
+    make_h5_sparse(ad_test, '%s/test_seqs.h5' % output_path, input_fasta, batch_size)
+    make_h5_sparse(ad_val, '%s/val_seqs.h5' % output_path, input_fasta, batch_size)
 
-if __name__ == "__main__":
-    main()
 
 if __name__ == "__main__":
     main()
