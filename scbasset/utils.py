@@ -1,7 +1,7 @@
 """
 utility functions that support scBasset.
 """
-
+import re
 import anndata
 import h5py
 import time
@@ -130,6 +130,11 @@ def dna_1hot_2vec(seq, seq_len=None):
     return seq_code
 
 def split_train_test_val(ad, exclude_chr):                                           ############################################################ new split function
+    #check that chromosomes are in the right format
+    pattern = re.compile(r'^chr\d+$')
+    for chr in exclude_chr:
+        if not pattern.match(chr):
+            raise ValueError(f"Invalid chromosome format: {chr}. Expected format is 'chr' followed by a number.")
     # All indices
     ids = np.arange(ad.shape[1])
 
