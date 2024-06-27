@@ -56,6 +56,7 @@ The following output are saved to the output folder: ad.h5ad, splits.h5, train_s
 usage: scbasset_preprocess.py [-h] [--ad_file AD_FILE]
                               [--input_fasta INPUT_FASTA]
                               [--out_path OUT_PATH]
+                              [--chromosomes CHROMOSOMES]
 
 Preprocess anndata to generate inputs for scBasset.
 
@@ -65,6 +66,7 @@ optional arguments:
   --input_fasta INPUT_FASTA
                         Genome fasta file.
   --out_path OUT_PATH   Output path. Default to ./processed/
+  --chromosomes         Chromosomes to exclude from training data set, used for validation and test (2 values). Default to ['chr2', 'chr19']
 ```
 Note: if you are generating peak atlas and count matrix from other sources such as ArchR. Make sure the peak atlas and count matrix have matching peak order! For ArchR, use rowRanges(getMatrixFromProject(proj,"PeakMatrix")) as the peaks so that the peak order matches getMatrixFromProject(proj, "PeakMatrix"). Peaks in getPeakSet(proj) could have a different order!
 
