@@ -129,7 +129,7 @@ def dna_1hot_2vec(seq, seq_len=None):
                 seq_code[i] =  random.randint(0, 3)
     return seq_code
 
-def split_train_test_val(ad, exclude_chr):                                           ############################################################ new split function
+def split_train_test_val(ad, exclude_chr, batch_size):                                           ############################################################ new split function
     #check that chromosomes are in the right format
     pattern = re.compile(r'^chr\d+$')
     for chr in exclude_chr:
@@ -140,14 +140,22 @@ def split_train_test_val(ad, exclude_chr):                                      
 
     # Indices from the first excluded chromosome
     test_ids = np.where(ad.var['chr'] == exclude_chr[0])[0]
+    print(len(test_ids))
+    if len(test_ids) < batch_size:
+        raise ValueError(f"The test dataset has fewer sequences than the batch size")
+        
     # Indices from the second excluded chromosome
     val_ids = np.where(ad.var['chr'] == exclude_chr[1])[0]
+    print(len(val_ids))
+    if len(val_ids) < batch_size:
+        raise ValueError(f"The validation dataset has fewer sequences than the batch size")
+        
     # Combined indices of test and validation sets
     test_val_ids = np.concatenate((test_ids, val_ids))
 
     # All indices that are not in either the first or second excluded chromosome
     train_ids = np.setdiff1d(ids, test_val_ids)
-    
+
     return train_ids, test_ids, val_ids
 
 # def split_train_test_val(ids, seed=10, train_ratio=0.9):                            ########################################################### old split function
@@ -167,7 +175,7 @@ def split_train_test_val(ad, exclude_chr):                                      
 #     return train_ids, test_ids, val_ids
     
 
-def make_h5_sparse(tmp_ad, h5_name, input_fasta, seq_len=1344, batch_size=1000):
+def make_h5_sparse(tmp_ad, h5_name, input_fasta, batch_size, seq_len=1344):
     ## batch_size: how many peaks to process at a time
     ## tmp_ad.var must have columns chr, start, end
     
@@ -193,7 +201,7 @@ def make_h5_sparse(tmp_ad, h5_name, input_fasta, seq_len=1344, batch_size=1000):
 
     # save to h5 file
     for i in range(len(batches)):
-        
+
         idx = batches[i]
         # write X to h5 file
         seqs_dna,_ = make_bed_seqs_from_df(
@@ -205,12 +213,13 @@ def make_h5_sparse(tmp_ad, h5_name, input_fasta, seq_len=1344, batch_size=1000):
         dna_array_dense = [dna_1hot_2vec(x) for x in seqs_dna]
         dna_array_dense = np.array(dna_array_dense)
         ds_X[idx] = dna_array_dense
-            
+
         t1 = time.time()
         total = t1-t0
         print('process %d peaks takes %.1f s' %(i*batch_size, total))
     
     f.close()
+
 
 ################
 # create model #
