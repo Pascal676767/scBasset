@@ -4,6 +4,15 @@
 ![architecture](https://github.com/calico/scBasset/blob/main/docs/architecture.png)
 -->
 
+# Note
+
+This is a slightly modified version of scBasset. The main changes are as follows:
+- addition of reverse transcription if the genomic position is on the - strand
+- implementation of the exclusion of two chromosomes from training data, so that they can be used for validation and test data
+- addition of l2 regularization (rate 0.5) on the last dense layer of the model
+- possibility (default) of using a sequential model architecture that includes a few changes, notably changing the Gelu activation function to Relu, the Reshape layer to Flatten, deleting the filter layers (stochasticshift etc.).
+This is necessary in order to be able to use DeepShap
+
 # scBasset
 Sequence-based Modeling of single-cell ATAC-seq using Convolutional Neural Networks.
 scBasset is a sequence-based convolutional neural network method to model single cell ATAC-seq data. We show that by leveraging the DNA sequence information underlying accessibility peaks and the expressiveness of a neural network model, scBasset achieves state-of-the-art performance across a variety of tasks on single-cell ATAC-seq and single-cell multiome datasets, including cell type identification, scATAC profile denoising, data integration, and transcription factor activity inference.
