@@ -105,10 +105,10 @@ def main():
     ).batch(128).prefetch(tf.data.AUTOTUNE)
     
     # build model
-    model = make_model(bottleneck_size, n_cells)
+    #model = make_model(bottleneck_size, n_cells)
 
     # build sequential model (to be used with deepshap) 
-    #model = make_sequential_model(bottleneck_size,n_cells)
+    model = make_sequential_model(bottleneck_size,n_cells)
     
     # load model if provided trained model
     if trained_model is not None:
